@@ -18,13 +18,14 @@ let passport = require('passport');
 let passportService = require('../config/passAuth');
 
 let requireSignin = passport.authenticate('local', {session: false});
+let requireAuth = passport.authenticate('jwt', {session: false});
 
 let token = (user) => {
     let timestamp = new Date().getTime();
     return jwt.encode({sub: user.id, iat: timestamp}, config.secret)
 }
 
-router.get('/', (req, res) => {
+router.get('/', requireAuth, (req, res) => {
     res.send('hello world');
 })
 
@@ -33,7 +34,7 @@ router.post('/signin', requireSignin, (req, res) => {
 
     // req.user (from passAuth done(null, user))
     // pass back json web token
-
+    // cookies dont work cross domain so we use token based authentication
     res.json({token: token(req.user)});
 })
 

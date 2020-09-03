@@ -6,6 +6,38 @@ const bcrypt = require('bcryptjs');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 
+const JwtStrategy = require('passport-jwt').Strategy;
+const ExtractJwt = require('passport-jwt').ExtractJwt;
+const config = require('../secrets');
+
+let jwtOptions = {
+    jwtFromRequest: ExtractJwt.fromHeader('authorization'),
+    secretOrKey: config.secret
+}
+
+// always gotta have done at the end, thats how u exit middleware
+let jwtLogin = new JwtStrategy(jwtOptions, (payload, done)=> {
+
+    // unencoded payload: payload.sub is user.id
+    db.user.findByPk(payload.sub)
+    .then(foundUser => {
+
+        if(foundUser)
+        {
+            done(null, foundUser)
+        }
+        else
+        {
+            done(null, false)
+        }
+
+    })
+    .catch(err => {
+        done(err, false)
+    })
+
+})
+
 let options = {
     usernameField: 'email'
 }
@@ -59,4 +91,5 @@ let localLogin = new LocalStrategy(options, (email, password, done)=>{
 });
 
 passport.use(localLogin);
+passport.use(jwtLogin);
 
